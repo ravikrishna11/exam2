@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sns="http://www.mulesoft.org/schema/mule/sns" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:s3="http://www.mulesoft.org/schema/mule/s3"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/s3 http://www.mulesoft.org/schema/mule/s3/current/mule-s3.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/sns http://www.mulesoft.org/schema/mule/sns/current/mule-sns.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="166ccea7-2ab3-4b4b-847e-56bc7365aa76" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<s3:config name="Amazon_S3_Configuration" doc:name="Amazon S3 Configuration" doc:id="f55c3fe3-2094-455d-b9ea-4dc464527719" >
+		<s3:basic-connection accessKey="AKIAJWKZDPLHRO4WPP7A" secretKey=" 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" />
+	</s3:config>
+	<sns:config name="Amazon_SNS_configuration" doc:name="Amazon SNS configuration" doc:id="945481a8-7e5c-4b53-b29f-515706930734" >
+		<sns:basic-connection accessKey="AKIAJWKZDPLHRO4WPP7A" secretKey="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" />
+	</sns:config>
+	<flow name="creatFileIntoAws" doc:id="5eff1511-793b-47c1-b8bd-7ce0abbc54ff" >
+		<http:listener doc:name="Listener" doc:id="48ffd334-3842-45f2-8736-86630e9febfd" config-ref="HTTP_Listener_config" path="/createBucket" allowedMethods="POST"/>
+		<logger level="INFO" doc:name="Logger" doc:id="9fbacca3-cc0f-424e-bf2d-f330389a7e0b" message="#[payload]"/>
+		<s3:create-object doc:name="Create object" doc:id="b94d203e-2289-43c5-aa31-6d4e0af7dc27" config-ref="Amazon_S3_Configuration" bucketName="ravikrishnameka" key="MyFile2"/>
+	</flow>
+	<flow name="FetchDataFromAws" doc:id="4909cadf-7a51-4365-8921-f29b668938d6" >
+		<http:listener doc:name="Listener" doc:id="94c089a6-d84e-4279-851b-a03f94c3e399" config-ref="HTTP_Listener_config" path="/fetch"/>
+		<s3:get-object doc:name="Get object" doc:id="0c239a73-6157-419b-bb6b-a4e5c0505a90" config-ref="Amazon_S3_Configuration" bucketName="ravikrishnameka" key="data.csv"/>
+		<logger level="INFO" doc:name="Logger" doc:id="cf957647-8a13-43e3-9a50-1ad7aef67cbf" message="#[payload]"/>
+	</flow>
+	<flow name="deleteFileFromAws" doc:id="ffdf4308-79ce-4a48-b080-2aa076f97bfd" >
+		<http:listener doc:name="Listener" doc:id="6c472ab5-ea50-4bef-a5b0-855dc87ae2a8" config-ref="HTTP_Listener_config" path="/delete"/>
+		<s3:delete-object doc:name="Delete object" doc:id="31fda634-81db-47ed-aae8-3277212a838d" config-ref="Amazon_S3_Configuration" bucketName="ravikrishnameka" key="MyFile1"/>
+		<logger level="INFO" doc:name="Logger" doc:id="9f581890-3561-4d9d-96e6-a1aa03874ac4" />
+	</flow>
+</mule>

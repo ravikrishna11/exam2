@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b7864019-4e34-48c0-a5da-071613425f77" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="0e625d28-20b0-4ce4-b0ba-3857bd8216e5" >
+		<http:request-connection host="localhost" port="8081" />
+	</http:request-config>
+	<flow name="assessmentravi11Flow" doc:id="e84f8fa9-bb50-4939-b89e-0532ee70b136" >
+		<http:listener doc:name="Listener" doc:id="ed484e47-03ed-485b-b42e-904b993c7a67" config-ref="HTTP_Listener_config" path="/weather"/>
+		<http:request method="GET" doc:name="Request" doc:id="0cb98696-ea28-428d-b050-75f54e27c13f" config-ref="HTTP_Request_configuration" url="https://api.meteostat.net/v1/climate/normals">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"key" : "lR0cZrnk",
+	"station" : "10637"
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="temperature" doc:id="2a126706-acab-4fa2-9ae5-fe338abaab9b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/dw
+---
+"temperature": {
+            "JAN": "0.7",
+            "FEB": "1.8",
+            "MAR": "5.2",
+            "APR": "9.2",
+            "MAY": "13.7",
+            "JUN": "17.1",
+            "JUL": "18.9",
+            "AUG": "18.3",
+            "SEP": "14.8",
+            "OCT": "9.8",
+            "NOV": "4.7",
+            "DEC": "1.8"
+        } filterObject ((value,key,index) -> value >18.5)
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="precipitation" doc:id="ec95245c-346b-4da8-8b77-eb73305f2c57" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="preci" ><![CDATA[%dw 2.0
+output application/dw
+---
+ {average: avg([43.8,39.8,51.1,51.5,61.3,70.2,63.0,64.8,48.3,50.5,59.4,54.1])}
+
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="a771f0bf-925c-4513-a018-ff1ca001e988" message="#[payload ++ vars.preci]"/>
+	</flow>
+	<flow name="weekyTemperature" doc:id="fccb5d60-2798-4abf-8632-ad63cd5069b1" >
+		<http:listener doc:name="Listener" doc:id="26d3dbda-7ba3-4d3c-a0e3-fe9a2b9602d5" config-ref="HTTP_Listener_config" path="/daily"/>
+		<http:request method="GET" doc:name="Request" doc:id="f999577a-4859-49a4-8c15-2b9200061ddf" config-ref="HTTP_Request_configuration" url="https://api.meteostat.net/v1/history/daily">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"start" : "2017-01-01",
+	"key" : "lR0cZrnk",
+	"end" : "2017-12-31",
+	"station" : "10637"
+}]]]></http:query-params>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="ead17cab-3568-471a-b19b-3ae00133e2b8" />
+	</flow>
+</mule>
